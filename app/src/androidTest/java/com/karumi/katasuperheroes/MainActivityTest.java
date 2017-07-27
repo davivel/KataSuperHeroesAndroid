@@ -26,7 +26,11 @@ import com.karumi.katasuperheroes.model.SuperHero;
 import com.karumi.katasuperheroes.model.SuperHeroesRepository;
 import com.karumi.katasuperheroes.ui.view.MainActivity;
 import it.cosenonjaviste.daggermock.DaggerMockRule;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +40,7 @@ import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class) @LargeTest public class MainActivityTest {
@@ -65,8 +70,24 @@ import static org.mockito.Mockito.when;
     onView(withText("¯\\_(ツ)_/¯")).check(matches(isDisplayed()));
   }
 
+  @Test public void doesNotShowEmptyCaseIfThereAreSomeSuperHeroes() {
+    givenThereAreSomeSuperHeroes();
+
+    startActivity();
+
+    onView(withText("¯\\_(ツ)_/¯")).check(matches(not(isDisplayed())));
+  }
+
   private void givenThereAreNoSuperHeroes() {
     when(repository.getAll()).thenReturn(Collections.<SuperHero>emptyList());
+  }
+
+  private void givenThereAreSomeSuperHeroes() {
+    List<SuperHero> superHeroes = new ArrayList<>();
+    for (int i=0; i<3; i++) {
+      superHeroes.add(new SuperHero("hero-" + i, "https://fake.com/image-" + i, true, "lol"));
+    }
+    when(repository.getAll()).thenReturn(superHeroes);
   }
 
   private MainActivity startActivity() {
