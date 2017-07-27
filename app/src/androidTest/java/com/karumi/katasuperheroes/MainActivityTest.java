@@ -22,7 +22,6 @@ import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
 import android.view.View;
-import android.widget.TextView;
 
 import com.karumi.katasuperheroes.di.MainComponent;
 import com.karumi.katasuperheroes.di.MainModule;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hamcrest.Matcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +46,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
@@ -95,7 +93,8 @@ import static org.mockito.Mockito.when;
     onView(withId(R.id.progress_bar)).check(matches(not(isDisplayed())));
   }
 
-  @Test public void showsSuperHeroesNameIfThereAreSuperHeroes () throws Exception {
+  @Test
+  public void showsSuperHeroesNameIfThereAreSuperHeroes() throws Exception {
     List<SuperHero> superHeroes = givenThereAreSomeSuperHeroes();
 
     startActivity();
@@ -110,14 +109,68 @@ import static org.mockito.Mockito.when;
     }});
   }
 
+  @Test
+  public void showsAvengersBadgeGivenThereAreSuperHeroesThatAreAvengers() throws Exception {
+    List<SuperHero> avengers = givenThereAreSomeAvengers();
+
+    startActivity();
+
+    RecyclerViewInteraction.<SuperHero>onRecyclerView(
+        withId(R.id.recycler_view)
+    ).withItems(avengers).check(
+        new RecyclerViewInteraction.ItemViewAssertion<SuperHero>() {
+          @Override
+          public void check(SuperHero item, View view, NoMatchingViewException e) {
+            matches(hasDescendant(allOf(withId(R.id.iv_avengers_badge), isDisplayed()))).check(view, e);
+          }
+        }
+    );
+  }
+
+  @Test
+  public void doesNotShowAvengersBadgeGivenThereAreSuperHeroesThatAreNotAvengers() throws Exception {
+    List<SuperHero> notAvengers = givenThereAreSomeNotAvengers();
+
+    startActivity();
+
+    RecyclerViewInteraction.<SuperHero>onRecyclerView(
+        withId(R.id.recycler_view)
+    ).withItems(notAvengers).check(
+        new RecyclerViewInteraction.ItemViewAssertion<SuperHero>() {
+          @Override
+          public void check(SuperHero item, View view, NoMatchingViewException e) {
+            matches(hasDescendant(allOf(withId(R.id.iv_avengers_badge), not(isDisplayed())))).check(view, e);
+          }
+        }
+    );
+  }
+
   private void givenThereAreNoSuperHeroes() {
     when(repository.getAll()).thenReturn(Collections.<SuperHero>emptyList());
   }
 
   private List<SuperHero> givenThereAreSomeSuperHeroes() {
     List<SuperHero> superHeroes = new ArrayList<>();
-    for (int i=0; i<1000; i++) {
+    for (int i=0; i<100; i++) {
+      superHeroes.add(new SuperHero("hero-" + i, "https://fake.com/image-" + i, (i%2)==0, "lol"));
+    }
+    when(repository.getAll()).thenReturn(superHeroes);
+    return superHeroes;
+  }
+
+  private List<SuperHero> givenThereAreSomeAvengers() {
+    List<SuperHero> superHeroes = new ArrayList<>();
+    for (int i=0; i<100; i++) {
       superHeroes.add(new SuperHero("hero-" + i, "https://fake.com/image-" + i, true, "lol"));
+    }
+    when(repository.getAll()).thenReturn(superHeroes);
+    return superHeroes;
+  }
+
+  private List<SuperHero> givenThereAreSomeNotAvengers() {
+    List<SuperHero> superHeroes = new ArrayList<>();
+    for (int i=0; i<100; i++) {
+      superHeroes.add(new SuperHero("hero-" + i, "https://fake.com/image-" + i, false, "lol"));
     }
     when(repository.getAll()).thenReturn(superHeroes);
     return superHeroes;
