@@ -18,6 +18,7 @@ package com.karumi.katasuperheroes;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.espresso.NoMatchingViewException;
+import android.support.test.espresso.contrib.RecyclerViewActions;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
@@ -29,6 +30,8 @@ import com.karumi.katasuperheroes.model.SuperHero;
 import com.karumi.katasuperheroes.model.SuperHeroesRepository;
 import com.karumi.katasuperheroes.recyclerview.RecyclerViewInteraction;
 import com.karumi.katasuperheroes.ui.view.MainActivity;
+import com.karumi.katasuperheroes.ui.view.SuperHeroDetailActivity;
+
 import it.cosenonjaviste.daggermock.DaggerMockRule;
 
 import java.util.ArrayList;
@@ -41,13 +44,18 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.intent.Intents.intended;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static android.support.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class) @LargeTest public class MainActivityTest {
@@ -145,14 +153,32 @@ import static org.mockito.Mockito.when;
     );
   }
 
+  public void shouldNavigateToDetailsWhenTappedOnRow() throws Exception {
+    List<SuperHero> superHeroes = givenThereAreSomeSuperHeroes();
+
+    startActivity();
+
+    onView(withId(R.id.recycler_view)).
+        perform(RecyclerViewActions.actionOnItemAtPosition(0, click()));
+
+    SuperHero selectedHero = superHeroes.get(0);
+    intended(allOf(
+        hasComponent(SuperHeroDetailActivity.class.getCanonicalName()),
+        hasExtra("super_hero_name_key", equalTo(selectedHero.getName()))
+    ));
+  }
+
   private void givenThereAreNoSuperHeroes() {
     when(repository.getAll()).thenReturn(Collections.<SuperHero>emptyList());
   }
 
   private List<SuperHero> givenThereAreSomeSuperHeroes() {
     List<SuperHero> superHeroes = new ArrayList<>();
+    SuperHero superHero;
     for (int i=0; i<100; i++) {
-      superHeroes.add(new SuperHero("hero-" + i, "https://fake.com/image-" + i, (i%2)==0, "lol"));
+      superHero = new SuperHero("hero-" + i, "https://fake.com/image-" + i, (i%2)==0, "lol");
+      superHeroes.add(superHero);
+      when(repository.getByName(superHero.getName())).thenReturn(superHero);
     }
     when(repository.getAll()).thenReturn(superHeroes);
     return superHeroes;
